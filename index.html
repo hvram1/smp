@@ -62,6 +62,7 @@ body {
 
 .reg { padding:0 1.5rem 2rem; }
 .reg table { border-collapse:collapse; width:100%; font-size:.86rem; }
+@media (max-width:700px) { .reg .tw { overflow-x:auto; -webkit-overflow-scrolling:touch; } }
 .reg th { text-align:left; font-family:"IBM Plex Mono", monospace; font-size:.66rem;
           letter-spacing:.08em; text-transform:uppercase; color:var(--muted);
           border-bottom:1px solid var(--rule); padding:.45rem .5rem; position:sticky;
@@ -120,7 +121,11 @@ header.top .counts b {
 header.top .counts span { color:var(--muted); font-size:.7rem; text-transform:uppercase; letter-spacing:.07em; }
 
 main { display:grid; grid-template-columns:minmax(320px,26rem) 1fr; min-height:calc(100vh - 74px); }
-@media (max-width:900px) { main { grid-template-columns:1fr; } aside { max-height:none !important; } }
+/* min-width:0 on the tracks' items and minmax(0,1fr) on the phone track. A bare
+   1fr is minmax(auto,1fr): the single phone column grew to its widest child and
+   both panes stood 9px past a 390px screen. Measured in a 390px iframe. */
+main > aside, main > article { min-width:0; }
+@media (max-width:900px) { main { grid-template-columns:minmax(0,1fr); } aside { max-height:none !important; } }
 
 aside {
   border-right:1px solid var(--rule); background:var(--card);
@@ -162,7 +167,11 @@ input[type="search"], input[type="number"], select {
 .dot.has { background:var(--ta); }
 .sec small { font-size:.68rem; color:var(--muted); font-family:"IBM Plex Mono", monospace; }
 
-article { padding:1.6rem 2rem 5rem; max-width:56rem; }
+article { padding:1.6rem 2rem 5rem; max-width:56rem; overflow-wrap:anywhere; }
+/* overflow-wrap on the reading pane: this is unproofread OCR, and it joins words
+   -- smp1's quotations hold கற்றவனாய்வ்ரதங்களையனுஷ…, several words with no space,
+   which ran 53px out of its box and 21px past a 390px screen. It only breaks a
+   string that cannot otherwise fit, so a clean line is laid out as before. */
 .sechead { border-bottom:1px solid var(--rule); padding-bottom:1rem; margin-bottom:1.4rem; }
 .sechead .eyebrow {
   font-size:.7rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted);
@@ -300,6 +309,11 @@ mark { background:var(--warn-wash); color:inherit; padding:0 .1em; }
 .srclist .qn.amb { color:var(--warn); }
 .srclist .qn.none { color:var(--muted); }
 .srclist .unquoted { color:var(--muted); }
+/* After the base .srclist rules, never before: a base rule later in the sheet
+   wins on source order and the media query would silently do nothing. Two CSS
+   columns on a phone are ~155px each, a Tamil title cannot break inside one, and
+   the right-hand column's count badges stood 11px past a 390px screen. */
+@media (max-width:700px) { .srclist { columns:1; } .srclist div { overflow-wrap:anywhere; } }
 .tabs { display:flex; gap:.3rem; padding:.6rem 1rem 0; }
 .tab { font:inherit; font-size:.8rem; background:transparent; border:0; border-bottom:2px solid transparent;
        padding:.3rem .1rem .45rem; margin-right:.9rem; color:var(--muted); cursor:pointer; }
@@ -409,9 +423,9 @@ mark { background:var(--warn-wash); color:inherit; padding:0 .1em; }
 
 <section class="reg" id="sectionsView">
   <div class="hits" id="shits"></div>
-  <table><thead><tr><th>kāṇḍa</th><th>printed</th><th>section</th>
+  <div class="tw"><table><thead><tr><th>kāṇḍa</th><th>printed</th><th>section</th>
     <th>text</th><th>start</th></tr></thead>
-    <tbody id="sbody"></tbody></table>
+    <tbody id="sbody"></tbody></table></div>
 </section>
 
 <section class="reg" id="concordView" hidden>
@@ -426,17 +440,17 @@ mark { background:var(--warn-wash); color:inherit; padding:0 .1em; }
     read off the quotation these words fall inside.
   </p>
   <div class="hits" id="chits"></div>
-  <table><thead><tr><th>found in</th><th>Kane prints it at</th>
+  <div class="tw"><table><thead><tr><th>found in</th><th>Kane prints it at</th>
     <th>the digest, and whom it credits</th><th>stands at</th><th>run</th></tr></thead>
-    <tbody id="cbody"></tbody></table>
+    <tbody id="cbody"></tbody></table></div>
 </section>
 
 <section class="reg" id="authorsView" hidden>
   <div class="hits" id="ahits"></div>
-  <table><thead><tr><th>authority</th><th>quoted</th>
+  <div class="tw"><table><thead><tr><th>authority</th><th>quoted</th>
     <th>spread over kāṇḍa 1–7 · bar is the share of that kāṇḍa</th>
     <th>verse/prose</th><th>frame</th></tr></thead>
-    <tbody id="abody"></tbody></table>
+    <tbody id="abody"></tbody></table></div>
 </section>
 
 <section class="reg" id="sourcesView" hidden style="max-width:64rem">
