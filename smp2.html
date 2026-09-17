@@ -597,6 +597,14 @@ function show(id) {
   state.current = id; renderSection();
   // so a section can be linked to, and the anukramaṇikā's links round-trip
   history.replaceState(null, '', '#' + id);
+  // A TAP IS AN ADDRESS TOO. Stacked, the pane is the LAST thing on the page,
+  // and a short section cannot be scrolled to the top of a document that ends
+  // just below it: the browser clamps, and the reader lands in the middle of
+  // the register with the section still out of sight. Two screenshots, one
+  // from a phone and one taken here, show the same thing — which is why
+  // making the scroll instant changed nothing. Moving the pane above the
+  // register removes the scroll instead of speeding it up.
+  document.documentElement.classList.add('addressed');
   landOn(el('#pane'), true);
 }
 
