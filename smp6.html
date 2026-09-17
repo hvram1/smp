@@ -582,7 +582,7 @@ function show(id) {
   state.current = id; renderSection();
   // so a section can be linked to, and the anukramaṇikā's links round-trip
   history.replaceState(null, '', '#' + id);
-  el('#pane').scrollIntoView({block:'start', behavior:'smooth'});
+  landOn(el('#pane'), true);
 }
 
 el('#list').addEventListener('click', e => {
@@ -730,26 +730,53 @@ if (wantAuthority || quoteWanted) {
 //
 // Conditioned on where the node actually is, not on a width: beside a
 // side-by-side pane the thing is already on screen and this stays a no-op.
-function landOn(node) {
+// SMOOTH IS WRONG AT THIS DISTANCE, and on a phone it is the fault itself.
+// Stacked, the section pane begins 15,850px down a 21,000px page. A smooth
+// scroll of fifteen thousand pixels takes seconds on a phone and ANY touch
+// cancels it, so the reader taps a section, sees the list creep, puts a finger
+// down and stops it somewhere in the middle: a link that did nothing. Under a
+// screen's worth of travel smooth is pleasant; past that it is instant.
+function landOn(node, always, block) {
   if (!node) return;
   const r = node.getBoundingClientRect();
-  if (r.top >= innerHeight || r.bottom <= 0) node.scrollIntoView({block: 'start'});
+  if (!always && r.top < innerHeight && r.bottom > 0) return;
+  const far = Math.abs(r.top) > innerHeight;
+  node.scrollIntoView({block: block || 'start', behavior: far ? 'auto' : 'smooth'});
 }
+
+// THE BROWSER PUTS THE READER BACK WHERE THEY WERE, AFTER WE HAVE MOVED THEM.
+// On a reload, a back, or a restore from the bfcache, a phone browser applies
+// its own remembered scroll position once layout settles -- which is after this
+// script has run, so it silently undoes the landing. With a hash in the URL the
+// address is the instruction and the remembered position is not.
+if (location.hash) { try { history.scrollRestoration = 'manual'; } catch (e) {} }
 renderList(); renderSection(); renderAuthorities(); renderQuotes();
-if (quoteWanted) {
-  const card = document.getElementById(quoteWanted.q);
-  if (card) { card.classList.add('here'); card.scrollIntoView({block: 'center'}); }
-} else if (wantAuthority) {
-  landOn(el('#qpane'));
-} else if (byId[fromHash]) {
-  landOn(el('#pane'));
+
+// ASSERTED THREE TIMES, because the first one can be undone. The page is
+// 4.6MB and its web fonts arrive after it renders; a Devanagari face landing
+// late re-flows a list fifteen thousand pixels long, and whatever the reader
+// was put in front of moves. Each call is a no-op when the target is already
+// on screen, so re-asserting costs nothing and cannot jump a reader who has
+// started scrolling for themselves.
+function landInitial() {
+  if (quoteWanted) {
+    const card = document.getElementById(quoteWanted.q);
+    if (card) { card.classList.add('here'); landOn(card, false, 'center'); }
+  } else if (wantAuthority) {
+    landOn(el('#qpane'));
+  } else if (byId[fromHash]) {
+    landOn(el('#pane'));
+  }
 }
+landInitial();
+addEventListener('load', landInitial);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(landInitial);
 addEventListener('hashchange', () => {
   const id = decodeURIComponent(location.hash.slice(1));
   const q = D.quotes.find(x => x.q === id);
   if (!q) return;
   qstate.name = q.st; renderAuthorities(); renderQuotes();
   const card = document.getElementById(id);
-  if (card) { card.classList.add('here'); card.scrollIntoView({block: 'center'}); }
+  if (card) { card.classList.add('here'); landOn(card, true, 'center'); }
 });
 </script>
