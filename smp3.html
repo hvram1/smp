@@ -718,10 +718,31 @@ if (wantAuthority || quoteWanted) {
   el('#quotesView').hidden = false;
   el('#sourcesView').hidden = true;
 }
+// A DEEP LINK MUST LAND ON WHAT IT NAMES, and on a phone two of the three
+// kinds did not. Under 900px the panes stack -- the list first, the thing the
+// address names second -- so on a 390px screen `smp1.html#SMP:V1:S042` put
+// section 42 at y=15850 of a 21094px page, and `#q:मनु` put मनु's quotations
+// at y=8650, both with the reader left at y=0 looking at a list: a page that
+// had apparently ignored the link. Every one of the anukramaṇikā's 647 section
+// links and its whole authority spread went through those two paths. The
+// quotation address was the one kind that already scrolled, which is why the
+// fault stayed invisible. Measured in a 390px iframe, before and after.
+//
+// Conditioned on where the node actually is, not on a width: beside a
+// side-by-side pane the thing is already on screen and this stays a no-op.
+function landOn(node) {
+  if (!node) return;
+  const r = node.getBoundingClientRect();
+  if (r.top >= innerHeight || r.bottom <= 0) node.scrollIntoView({block: 'start'});
+}
 renderList(); renderSection(); renderAuthorities(); renderQuotes();
 if (quoteWanted) {
   const card = document.getElementById(quoteWanted.q);
   if (card) { card.classList.add('here'); card.scrollIntoView({block: 'center'}); }
+} else if (wantAuthority) {
+  landOn(el('#qpane'));
+} else if (byId[fromHash]) {
+  landOn(el('#pane'));
 }
 addEventListener('hashchange', () => {
   const id = decodeURIComponent(location.hash.slice(1));
