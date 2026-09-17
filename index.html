@@ -126,6 +126,21 @@ main { display:grid; grid-template-columns:minmax(320px,26rem) 1fr; min-height:c
    both panes stood 9px past a 390px screen. Measured in a 390px iframe. */
 main > aside, main > article { min-width:0; }
 @media (max-width:900px) { main { grid-template-columns:minmax(0,1fr); } aside { max-height:none !important; } }
+/* ARRIVING AT AN ADDRESS, THE THING ADDRESSED COMES FIRST. Stacked, the
+   193-section list runs fifteen thousand pixels and the section itself sits
+   below all of it, so honouring a deep link meant scrolling the reader that
+   far — and back again to reach the list. A screenshot from a phone showed
+   what that costs: the row correctly highlighted at the top of the list, the
+   section far out of sight, and a scroll the reader's own finger had
+   cancelled. Nothing is scrolled now; the pane is simply first.
+
+   Only when the URL named something. A reader who opened the kāṇḍa to browse
+   still gets the register first, which is what that page is for, so the class
+   is set by the script and not by the media query alone. */
+@media (max-width:900px) {
+  html.addressed main > article { order:-1; }
+  html.addressed main > aside { border-top:1px solid var(--rule); }
+}
 
 aside {
   border-right:1px solid var(--rule); background:var(--card);
