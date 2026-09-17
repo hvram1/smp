@@ -140,7 +140,33 @@ main > aside, main > article { min-width:0; }
 @media (max-width:900px) {
   html.addressed main > article { order:-1; }
   html.addressed main > aside { border-top:1px solid var(--rule); }
+  /* ONE OF THE TWO AT A TIME, not both stacked. Putting the section above the
+     register fixed arriving at it and broke leaving it: to choose anything
+     else the reader had to scroll past the whole section — 845 passages in
+     some of them — to reach a list that was now underneath. Stacked, these are
+     two views rather than one page, and the switch below moves between them.
+     Desktop keeps both: side by side, neither is in the other's way. */
+  html.addressed:not(.browsing) main > aside { display:none; }
+  html.addressed.browsing main > article { display:none; }
+  html.addressed.browsing aside { max-height:none; }
+  /* Room for the switch, or it sits on top of the last lines of the passage —
+     which on the closing verse of a section is exactly the wrong words to
+     cover. */
+  html.addressed main { padding-bottom:5.5rem; }
+  /* The switch itself: fixed, thumb-reachable, and out of the text's way. */
+  .viewswitch {
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(14px + env(safe-area-inset-bottom, 0px)); z-index:40;
+    font:inherit; font-size:.86rem; font-weight:600;
+    padding:.62rem 1.15rem; border-radius:999px; cursor:pointer;
+    color:var(--paper); background:var(--sa); border:1px solid var(--sa);
+    box-shadow:0 2px 6px rgba(0,0,0,.28), 0 10px 26px rgba(0,0,0,.22);
+  }
+  .viewswitch .n { opacity:.75; font-weight:400; }
 }
+/* Never on a desktop, where both panes are already on screen. */
+.viewswitch { display:none; }
+@media (max-width:900px) { html.addressed .viewswitch { display:block; } }
 
 aside {
   border-right:1px solid var(--rule); background:var(--card);
@@ -604,7 +630,10 @@ function show(id) {
   // from a phone and one taken here, show the same thing — which is why
   // making the scroll instant changed nothing. Moving the pane above the
   // register removes the scroll instead of speeding it up.
-  document.documentElement.classList.add('addressed');
+  const root = document.documentElement;
+  root.classList.add('addressed');
+  root.classList.remove('browsing');      // a pick IS the way back
+  if (typeof paintSwitch === 'function') paintSwitch();
   landOn(el('#pane'), true);
 }
 
@@ -787,6 +816,36 @@ if (byId[fromHash] || wantAuthority || quoteWanted) {
   document.documentElement.classList.add('addressed');
 }
 
+// THE WAY BACK. On a phone the register and the section are two views, and
+// this is the only way between them; it appears the moment either becomes the
+// whole screen, and never on a desktop, where both are already visible.
+const SWITCH = document.createElement('button');
+SWITCH.className = 'viewswitch';
+SWITCH.type = 'button';
+document.body.appendChild(SWITCH);
+function paintSwitch() {
+  const browsing = document.documentElement.classList.contains('browsing');
+  const s = byId[state.current];
+  SWITCH.innerHTML = browsing
+    ? `Read this section <span class="n">${s ? esc(s.sa || s.ta) : ''}</span>`
+    : `☰ All ${D.sections.length} sections <span class="n">of ${D.tag}</span>`;
+  SWITCH.setAttribute('aria-label', browsing
+    ? 'back to the section' : 'choose another section');
+}
+SWITCH.addEventListener('click', () => {
+  const root = document.documentElement;
+  root.classList.toggle('browsing');
+  paintSwitch();
+  // Each view opens at ITS top: the register at its filters, the section at
+  // its heading. Nothing is carried over from the scroll position of the view
+  // being left, which on a fifteen-thousand-pixel list is meaningless anyway.
+  scrollTo(0, 0);
+  if (root.classList.contains('browsing')) {
+    const on = document.querySelector('.sec[aria-current="true"]');
+    if (on) on.scrollIntoView({block: 'center'});
+  }
+});
+
 function landInitial() {
   if (quoteWanted) {
     const card = document.getElementById(quoteWanted.q);
@@ -797,6 +856,7 @@ function landInitial() {
     landOn(el('#pane'));
   }
 }
+paintSwitch();
 landInitial();
 addEventListener('load', landInitial);
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(landInitial);
