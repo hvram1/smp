@@ -663,6 +663,12 @@ document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () =>
   el('#indexView').hidden = state.view !== 'index';
   el('#quotesView').hidden = state.view !== 'quotes';
   el('#sourcesView').hidden = state.view !== 'sources';
+  // Reaching for a tab is reaching for its register, so open on that rather
+  // than on whatever was being read in the tab just left.
+  const root = document.documentElement;
+  if (state.view !== 'sources') root.classList.add('addressed', 'browsing');
+  paintSwitch();
+  scrollTo(0, 0);
 }));
 
 // ---- who it quotes -------------------------------------------------------
@@ -749,7 +755,15 @@ function renderQuotes() {
 }
 el('#alist').addEventListener('click', e => {
   const b = e.target.closest('.auth');
-  if (b) { qstate.name = b.dataset.name; renderAuthorities(); renderQuotes(); }
+  if (!b) return;
+  qstate.name = b.dataset.name; renderAuthorities(); renderQuotes();
+  // The same move as picking a section: on a phone the 320-name register and
+  // the quotations are two views, and this one chooses what to read.
+  const root = document.documentElement;
+  root.classList.add('addressed');
+  root.classList.remove('browsing');
+  paintSwitch();
+  landOn(el('#qpane'), true);
 });
 el('#qpane').addEventListener('click', e => {
   const j = e.target.closest('.jump');
@@ -825,12 +839,22 @@ SWITCH.type = 'button';
 document.body.appendChild(SWITCH);
 function paintSwitch() {
   const browsing = document.documentElement.classList.contains('browsing');
+  // Two registers share this page and the switch belongs to whichever is
+  // open: the sections under Index, the authorities under Who it quotes.
+  const quotes = state.view === 'quotes';
   const s = byId[state.current];
-  SWITCH.innerHTML = browsing
-    ? `Read this section <span class="n">${s ? esc(s.sa || s.ta) : ''}</span>`
+  const now = quotes ? qstate.name : (s ? (s.sa || s.ta) : '');
+  const all = quotes
+    ? `☰ All ${D.authorities.length} authorities`
     : `☰ All ${D.sections.length} sections <span class="n">of ${D.tag}</span>`;
+  SWITCH.innerHTML = browsing
+    ? `Read ${quotes ? 'these quotations' : 'this section'} <span class="n">${esc(now || '')}</span>`
+    : all;
   SWITCH.setAttribute('aria-label', browsing
-    ? 'back to the section' : 'choose another section');
+    ? 'back to what you were reading'
+    : (quotes ? 'choose another authority' : 'choose another section'));
+  // `What it draws on` is one column with no register facing it.
+  SWITCH.hidden = state.view === 'sources';
 }
 SWITCH.addEventListener('click', () => {
   const root = document.documentElement;
